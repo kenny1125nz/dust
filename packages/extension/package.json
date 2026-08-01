@@ -36,12 +36,14 @@
     "watch": "tsc -watch -p ./",
     "build:webview": "esbuild src/webview/index.tsx --bundle --outdir=dist/webview --external:vscode",
     "vscode:prepublish": "npm run compile && npm run build:webview",
+    "test": "npm run compile && node --test \"dist/**/*.test.js\"",
     "package": "vsce package --no-dependencies --allow-missing-repository --skip-license"
   },
   "dependencies": {
     "@dust/shared": "^0.1.0"
   },
   "devDependencies": {
+    "@types/node": "^20.0.0",
     "@types/vscode": "^1.90.0",
     "typescript": "^5.4.0",
     "preact": "^10.19.0",

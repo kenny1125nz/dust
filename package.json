@@ -13,7 +13,7 @@
     "watch": "npm run watch --workspaces",
     "build": "npm run compile && npm run build:webview",
     "build:webview": "npm run build:webview -w packages/extension",
-    "test": "npm run test -w packages/shared && npm run test -w packages/callback",
+    "test": "npm run test -w packages/shared && npm run test -w packages/callback && npm run test -w packages/extension",
     "package": "npm run package -w packages/extension"
   },
   "devDependencies": {
