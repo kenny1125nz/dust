@@ -3,3 +3,4 @@
 // (AgentGateway), 03-completion-signalling (CompletionSource), 04-run-metrics
 // (MetricsSink).
 export { VscodeFileSystem } from './vscodeFileSystem';
+export { VscodeChatAgent } from './vscodeChatAgent';
