@@ -4,3 +4,4 @@
 // (MetricsSink).
 export { VscodeFileSystem } from './vscodeFileSystem';
 export { VscodeChatAgent } from './vscodeChatAgent';
+export { PipeCompletionSource } from './pipeCompletionSource';

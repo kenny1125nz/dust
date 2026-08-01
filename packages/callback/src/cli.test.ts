@@ -5,9 +5,9 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import { spawn } from 'node:child_process';
 import { test } from 'node:test';
+import { completionPipeName } from '@dust/shared';
 
 const CLI_PATH = path.resolve(__dirname, 'cli.js');
-const PIPE_PREFIX = '\\\\.\\pipe\\dust-';
 
 function runCli(
   args: string[]
@@ -102,6 +102,26 @@ test('summary file violating the schema exits 1', async () => {
   }
 });
 
+test('summary file with a non-string notes field exits 1', async () => {
+  const summary = tempSummaryFile(JSON.stringify({ confidence: 50, actions: [], notes: 7 }));
+  try {
+    const { code, stderr } = await runCli([
+      '--status',
+      'done',
+      '--id',
+      'cid',
+      '--summary_file',
+      summary,
+      '--workspace',
+      'ws',
+    ]);
+    assert.strictEqual(code, 1);
+    assert.match(stderr, /summary.notes must be a string/);
+  } finally {
+    fs.unlinkSync(summary);
+  }
+});
+
 test('pipe connection failure exits 2', async () => {
   const summary = tempSummaryFile(JSON.stringify({ confidence: 50, actions: [] }));
   const workspace = `no-listener-${process.pid}-${Date.now()}`;
@@ -125,7 +145,7 @@ test('pipe connection failure exits 2', async () => {
 
 test('delivers a completion frame over the workspace pipe', async () => {
   const workspace = `ws-${process.pid}-${Date.now()}`;
-  const pipeName = `${PIPE_PREFIX}${workspace}`;
+  const pipeName = completionPipeName(workspace);
   const summary = tempSummaryFile(
     JSON.stringify({ confidence: 85, actions: ['read', 'write'], notes: 'ok' })
   );

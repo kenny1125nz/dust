@@ -4,11 +4,10 @@ import {
   CallbackStatus,
   CompletionFrame,
   CompletionSummary,
-  endpointIdentity,
+  completionPipeName,
   isCallbackStatus,
 } from '@dust/shared';
 
-const PIPE_PREFIX = '\\\\.\\pipe\\dust-';
 const CONNECT_TIMEOUT_MS = 5000;
 
 interface CallbackArgs {
@@ -115,6 +114,9 @@ function readSummary(path: string): CompletionSummary {
   if (!Array.isArray(summary.actions) || summary.actions.some((a) => typeof a !== 'string')) {
     throw new Error(`summary.actions must be an array of strings`);
   }
+  if (summary.notes !== undefined && typeof summary.notes !== 'string') {
+    throw new Error(`summary.notes must be a string`);
+  }
   return {
     confidence: summary.confidence,
     actions: summary.actions,
@@ -123,7 +125,7 @@ function readSummary(path: string): CompletionSummary {
 }
 
 function deliver(args: CallbackArgs, summary: CompletionSummary): Promise<void> {
-  const pipeName = `${PIPE_PREFIX}${endpointIdentity(args.workspace as string)}`;
+  const pipeName = completionPipeName(args.workspace as string);
   const frame: CompletionFrame = {
     status: args.status as CallbackStatus,
     correlationId: args.id as string,
