@@ -5,3 +5,4 @@
 export { VscodeFileSystem } from './vscodeFileSystem';
 export { VscodeChatAgent } from './vscodeChatAgent';
 export { PipeCompletionSource } from './pipeCompletionSource';
+export { SqliteMetricsSink } from './sqliteMetricsSink';
