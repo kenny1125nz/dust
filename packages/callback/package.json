@@ -1,0 +1,26 @@
+{
+  "name": "@dust/callback",
+  "version": "0.1.0",
+  "description": "Global dust-callback CLI: signals completion of an applied actor step to the dust extension.",
+  "bin": {
+    "dust-callback": "./bin/dust-callback.js"
+  },
+  "preferGlobal": true,
+  "files": [
+    "bin",
+    "dist"
+  ],
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "prepublishOnly": "npm run compile",
+    "test": "npm run compile && node --test \"dist/**/*.test.js\""
+  },
+  "dependencies": {
+    "@dust/shared": "^0.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.4.0"
+  }
+}

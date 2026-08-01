@@ -1,0 +1,15 @@
+node_modules/
+dist/
+*.vsix
+*.log
+.DS_Store
+
+# Workspace-local run data (created at runtime by the extension)
+.dust/metrics.db
+.dust/metrics.db-journal
+.dust/endpoint.json
+
+# Agent harness artifacts (not part of the dust project)
+.ash/
+ash.log
+telemetry.jsonl

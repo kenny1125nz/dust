@@ -1,0 +1,19 @@
+{
+  "name": "@dust/shared",
+  "version": "0.1.0",
+  "description": "Shared kernel for dust: shared types and the endpointIdentity pipe-name function.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "test": "npm run compile && node --test \"dist/**/*.test.js\""
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.4.0"
+  }
+}

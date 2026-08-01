@@ -1,0 +1,22 @@
+{
+  "name": "dust",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Apply an actor over a selected file or folder from the VS Code Explorer.",
+  "workspaces": [
+    "packages/shared",
+    "packages/callback",
+    "packages/extension"
+  ],
+  "scripts": {
+    "compile": "npm run compile --workspaces",
+    "watch": "npm run watch --workspaces",
+    "build": "npm run compile && npm run build:webview",
+    "build:webview": "npm run build:webview -w packages/extension",
+    "test": "npm run test -w packages/shared && npm run test -w packages/callback",
+    "package": "npm run package -w packages/extension"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}
