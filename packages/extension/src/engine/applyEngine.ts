@@ -1,12 +1,13 @@
 import { randomUUID } from 'crypto';
 import * as path from 'path';
 import type { Uri } from 'vscode';
-import type { Role } from '@dust/shared';
+import type { ChatGateway, Role } from '@dust/shared';
 import type { ActorSource } from '../actors/actorSource';
 import type { TargetResolver } from '../targets/targetResolver';
 import type { FileSystem } from '../targets/fileSystem';
 import { FileType } from '../targets/fileSystem';
 import type { AgentGateway } from '../dispatch/agentGateway';
+import type { GatewaySelector } from '../dispatch/gatewayRegistry';
 import type { CompletionSource } from '../completion/completionSource';
 import type { MetricsSink } from '../metrics/metricsSink';
 import { compose, feedbackSection, importantNote, targetLabel } from './compose';
@@ -19,6 +20,8 @@ export interface ApplyRequest {
   /** Workspace root path, used to derive the `--workspace` value. */
   workspacePath: string;
   model?: Role;
+  /** The chat tool to dispatch to; overrides the actor/step default. */
+  gateway?: ChatGateway;
   /** Extra instructions from the Webview's "Extra Instructions" textarea. */
   addendum?: string;
 }
@@ -42,7 +45,8 @@ export interface ApplyEngine {
 export interface ApplyEngineDeps {
   catalogue: ActorSource;
   targets: TargetResolver;
-  gateway: AgentGateway;
+  /** Resolves the chat tool to dispatch to; a single fixed gateway never suffices. */
+  gateways: GatewaySelector;
   completion: CompletionSource;
   fs: FileSystem;
   metrics: MetricsSink;
@@ -59,7 +63,7 @@ export class ApplyOrchestrator implements ApplyEngine {
   constructor(private readonly deps: ApplyEngineDeps) {}
 
   async apply(request: ApplyRequest): Promise<RunResult> {
-    const { catalogue, targets, gateway, completion, metrics } = this.deps;
+    const { catalogue, targets, gateways, completion, metrics } = this.deps;
 
     const actor = catalogue.loadTree().getActor(request.actorId);
     if (!actor) {
@@ -111,6 +115,8 @@ export class ApplyOrchestrator implements ApplyEngine {
           const cid = randomUUID();
           const instruction = this.composeInstruction(step, context.target, context.content, cid, workspaceName, request);
           const dispatchedAt = Date.now();
+          const gatewayName = request.gateway ?? step.gateway ?? actor.gateway;
+          const gateway: AgentGateway = gateways.select(gatewayName);
           gateway.dispatch(instruction, request.model ?? step.model ?? actor.model);
           const frame = await completion.await(cid);
           this.emit(() =>

@@ -157,6 +157,43 @@ test('an invalid model value fails fast with the offending file path', () => {
   }
 });
 
+test('reads a gateway from single-file actor front-matter', () => {
+  const { root, cleanup } = tempActorsRoot();
+  try {
+    write(root, 'plan.md', '---\nmodel: Reason\ngateway: cline\n---\nYou are a planner.\n');
+    const tree = createActorSource(root).loadTree();
+    assert.strictEqual(tree.getActor('plan.md')?.gateway, 'cline');
+    assert.strictEqual(tree.getActor('plan.md')?.model, 'Reason');
+  } finally {
+    cleanup();
+  }
+});
+
+test('a multi-step actor reads gateway from its first step front-matter', () => {
+  const { root, cleanup } = tempActorsRoot();
+  try {
+    write(root, 'implement/01-plan.md', '---\nmodel: Reason\ngateway: cline\n---\n');
+    write(root, 'implement/02-code.md', '---\nmodel: Build\n---\n');
+    const tree = createActorSource(root).loadTree();
+    assert.strictEqual(tree.getActor('implement')?.gateway, 'cline');
+    assert.strictEqual(tree.getActor('implement')?.model, 'Reason');
+  } finally {
+    cleanup();
+  }
+});
+
+test('an invalid gateway value fails fast with the offending file path', () => {
+  const { root, cleanup } = tempActorsRoot();
+  try {
+    write(root, 'bad.md', '---\ngateway: llama\n---\n');
+    assert.throws(() => createActorSource(root).loadTree(), (error: Error) => {
+      return error.message.includes('bad.md') && error.message.includes('copilot, cline');
+    });
+  } finally {
+    cleanup();
+  }
+});
+
 test('a missing actors root yields an empty tree', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dust-actors-'));
   try {

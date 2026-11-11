@@ -26,6 +26,7 @@ export async function buildActorTreePayload(
   for (const [id, entry] of collectActors(root, getActor)) {
     actors[id] = {
       model: entry.model,
+      gateway: entry.gateway,
       steps: entry.steps,
       body: await actorBody(entry.steps, fs, toFileUri),
     };

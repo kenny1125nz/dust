@@ -55,6 +55,9 @@ Example:
       --summary_file ./summary.json \\
       --workspace my-project
 
+On success the summary file is removed and a confirmation is printed to stdout;
+on pipe failure the file is preserved and the error goes to stderr.
+
 Exit codes: 0 on success, 1 on missing/invalid arguments or invalid summary
 file, 2 on pipe connection failure.`;
 
@@ -172,12 +175,26 @@ async function main(): Promise<void> {
 
   try {
     await deliver(args, summary);
-    process.exit(0);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     process.stderr.write(`Error: failed to deliver completion frame: ${message}\n`);
     process.exit(2);
   }
+
+  const summaryFile = args.summaryFile as string;
+  try {
+    fs.unlinkSync(summaryFile);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    process.stderr.write(`Warning: could not remove summary file ${summaryFile}: ${message}\n`);
+  }
+
+  process.stdout.write(
+    `dust-callback: delivered completion for ${args.id} (${args.status}) to dust via ${completionPipeName(
+      args.workspace as string
+    )}; summary file removed.\n`
+  );
+  process.exit(0);
 }
 
 main();

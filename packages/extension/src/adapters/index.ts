@@ -4,6 +4,8 @@
 // (MetricsSink), 05-actor-catalogue (ActorSource).
 export { VscodeFileSystem } from './vscodeFileSystem';
 export { VscodeChatAgent } from './vscodeChatAgent';
+export { CLINE_EXTENSION_ID, ClineAPI, ClineApiResolver, resolveClineApi } from './clineApi';
+export { ClineChatAgent } from './clineChatAgent';
 export { PipeCompletionSource } from './pipeCompletionSource';
 export { SqliteMetricsSink } from './sqliteMetricsSink';
 export { ActorSourceAdapter, createActorSource } from './actorSourceAdapter';

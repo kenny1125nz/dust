@@ -1,9 +1,10 @@
 import type { Uri } from 'vscode';
-import type { Role } from '@dust/shared';
+import type { ChatGateway, Role } from '@dust/shared';
 import type { ApplyEngine, ApplyRequest, RunResult } from '../engine';
 
 export interface ApplyOptions {
   model?: Role;
+  gateway?: ChatGateway;
   addendum?: string;
 }
 
@@ -31,6 +32,7 @@ export class ApplyEngineTrigger implements CommandTrigger {
       wholeTarget,
       workspacePath: this.workspacePath,
       model: opts?.model,
+      gateway: opts?.gateway,
       addendum: opts?.addendum,
     };
     return this.engine.apply(request);

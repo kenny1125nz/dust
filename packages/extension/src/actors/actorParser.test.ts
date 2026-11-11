@@ -34,6 +34,24 @@ test('parseActorFrontMatter fails fast on an invalid model value', () => {
   );
 });
 
+test('parseActorFrontMatter reads a valid gateway alongside model', () => {
+  assert.deepStrictEqual(parseActorFrontMatter('---\nmodel: Reason\ngateway: cline\n---\nbody\n'), {
+    model: 'Reason',
+    gateway: 'cline',
+  });
+});
+
+test('parseActorFrontMatter returns no gateway when gateway is absent', () => {
+  assert.deepStrictEqual(parseActorFrontMatter('---\nmodel: Reason\n---\n'), { model: 'Reason' });
+});
+
+test('parseActorFrontMatter fails fast on an invalid gateway value', () => {
+  assert.throws(
+    () => parseActorFrontMatter('---\ngateway: llama\n---\n'),
+    /must be one of: copilot, cline/
+  );
+});
+
 test('parseActorFrontMatter fails fast on an unterminated front-matter block', () => {
   assert.throws(() => parseActorFrontMatter('---\nmodel: Reason\n'), /malformed actor front-matter/);
 });

@@ -1,8 +1,9 @@
-import type { Role } from '@dust/shared';
-import { ROLES, isRole } from '@dust/shared';
+import type { ChatGateway, Role } from '@dust/shared';
+import { CHAT_GATEWAYS, ROLES, isChatGateway, isRole } from '@dust/shared';
 
 export interface ParsedFrontMatter {
   model?: Role;
+  gateway?: ChatGateway;
 }
 
 export type FolderKind = 'multi-step' | 'sub-menu';
@@ -42,8 +43,9 @@ export function classifyFolder(files: string[], directories: string[]): FolderKi
 
 /**
  * Parses the optional YAML front-matter at the top of an actor file. Only the
- * `model` key is recognized; unknown keys are ignored (forward-compatible).
- * Malformed or invalid front-matter fails fast with a clear, actionable message.
+ * `model` and `gateway` keys are recognized; unknown keys are ignored
+ * (forward-compatible). Malformed or invalid front-matter fails fast with a
+ * clear, actionable message.
  */
 export function parseActorFrontMatter(raw: string): ParsedFrontMatter {
   if (!raw.startsWith('---')) {
@@ -63,12 +65,22 @@ export function parseActorFrontMatter(raw: string): ParsedFrontMatter {
     }
     fields[line.slice(0, colon).trim()] = line.slice(colon + 1).trim();
   }
+  const result: ParsedFrontMatter = {};
   const model = fields['model'];
-  if (model === undefined) {
-    return {};
+  if (model !== undefined) {
+    if (!isRole(model)) {
+      throw new Error(`actor front-matter 'model' must be one of: ${ROLES.join(', ')} (got '${model}')`);
+    }
+    result.model = model;
   }
-  if (!isRole(model)) {
-    throw new Error(`actor front-matter 'model' must be one of: ${ROLES.join(', ')} (got '${model}')`);
+  const gateway = fields['gateway'];
+  if (gateway !== undefined) {
+    if (!isChatGateway(gateway)) {
+      throw new Error(
+        `actor front-matter 'gateway' must be one of: ${CHAT_GATEWAYS.join(', ')} (got '${gateway}')`
+      );
+    }
+    result.gateway = gateway;
   }
-  return { model };
+  return result;
 }

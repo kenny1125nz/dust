@@ -23,6 +23,7 @@ test('ApplyEngineTrigger forwards a CommandTrigger call as an ApplyRequest', asy
 
   const result = await trigger.onApply('plan', [makeUri('/workspace/Goal.md')], true, {
     model: 'Review',
+    gateway: 'cline',
     addendum: 'watch out',
   });
 
@@ -34,6 +35,7 @@ test('ApplyEngineTrigger forwards a CommandTrigger call as an ApplyRequest', asy
       wholeTarget: true,
       workspacePath: '/workspace',
       model: 'Review',
+      gateway: 'cline',
       addendum: 'watch out',
     },
   ]);
@@ -51,6 +53,7 @@ test('ApplyEngineTrigger omits options when absent', async () => {
     wholeTarget: false,
     workspacePath: '/workspace',
     model: undefined,
+    gateway: undefined,
     addendum: undefined,
   });
 });

@@ -1,4 +1,4 @@
-import type { Role } from '@dust/shared';
+import type { ChatGateway, Role } from '@dust/shared';
 import type { ActorTreeNode } from '../actors/schema';
 import type { ActorPreview, DustInitialData, TargetNodePayload } from '../surface/webviewProtocol';
 
@@ -13,6 +13,7 @@ export interface PanelState {
   workspacePath: string;
   wholeTarget: boolean;
   model: Role | null;
+  gateway: ChatGateway | null;
   addendum: string;
   phase: PanelPhase;
   result: { itemCount: number; stepCount: number } | null;
@@ -24,6 +25,7 @@ export type PanelAction =
   | { type: 'SELECT_ACTOR'; id: string }
   | { type: 'SET_WHOLE_TARGET'; wholeTarget: boolean }
   | { type: 'SET_MODEL'; model: Role | null }
+  | { type: 'SET_GATEWAY'; gateway: ChatGateway | null }
   | { type: 'SET_ADDENDUM'; text: string }
   | { type: 'SET_RUNNING' }
   | { type: 'SET_COMPLETE'; result: { itemCount: number; stepCount: number } }
@@ -40,6 +42,7 @@ export function createInitialState(data: DustInitialData): PanelState {
     workspacePath: data.workspacePath,
     wholeTarget: false,
     model: null,
+    gateway: null,
     addendum: '',
     phase: 'empty',
     result: null,
@@ -76,6 +79,8 @@ export function panelReducer(state: PanelState, action: PanelAction): PanelState
       return { ...state, wholeTarget: action.wholeTarget };
     case 'SET_MODEL':
       return { ...state, model: action.model };
+    case 'SET_GATEWAY':
+      return { ...state, gateway: action.gateway };
     case 'SET_ADDENDUM':
       return { ...state, addendum: action.text };
     case 'SET_RUNNING':

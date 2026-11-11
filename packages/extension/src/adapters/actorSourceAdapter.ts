@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import type { Role } from '@dust/shared';
+import type { ChatGateway, Role } from '@dust/shared';
 import { ActorSource } from '../actors/actorSource';
 import { ActorEntry, ActorTree, ActorTreeNode } from '../actors/schema';
 import { classifyFolder, orderStepFiles, parseActorFrontMatter } from '../actors/actorParser';
@@ -40,7 +40,8 @@ export class ActorSourceAdapter implements ActorSource {
     if (classifyFolder(files, dirs) === 'multi-step') {
       const stepPaths = orderStepFiles(files).map((name) => path.join(nodePath, name));
       const relPath = path.relative(this.root, nodePath);
-      actorMap.set(relPath, { steps: stepPaths, model: this.parseModel(stepPaths[0]) });
+      const meta = this.parseMeta(stepPaths[0]);
+      actorMap.set(relPath, { steps: stepPaths, model: meta.model, gateway: meta.gateway });
       return { name: path.basename(nodePath), actorId: relPath, children: [] };
     }
 
@@ -48,7 +49,8 @@ export class ActorSourceAdapter implements ActorSource {
     for (const file of files) {
       const filePath = path.join(nodePath, file);
       const relPath = path.relative(this.root, filePath);
-      actorMap.set(relPath, { steps: [filePath], model: this.parseModel(filePath) });
+      const meta = this.parseMeta(filePath);
+      actorMap.set(relPath, { steps: [filePath], model: meta.model, gateway: meta.gateway });
       children.push({ name: file, actorId: relPath, children: [] });
     }
     for (const dir of dirs) {
@@ -58,9 +60,10 @@ export class ActorSourceAdapter implements ActorSource {
   }
 
   /** Reads a file and parses its front-matter, decorating failures with the path. */
-  private parseModel(filePath: string): Role | undefined {
+  private parseMeta(filePath: string): { model?: Role; gateway?: ChatGateway } {
     try {
-      return parseActorFrontMatter(fs.readFileSync(filePath, 'utf8')).model;
+      const frontMatter = parseActorFrontMatter(fs.readFileSync(filePath, 'utf8'));
+      return { model: frontMatter.model, gateway: frontMatter.gateway };
     } catch (error) {
       throw new Error(`${filePath}: ${(error as Error).message}`);
     }

@@ -1,7 +1,28 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import Database from 'better-sqlite3';
+import type Database from 'better-sqlite3';
 import { MetricsSink, RunStart, StepRecord } from '../metrics/metricsSink';
+
+type SqliteDatabase = Database.Database;
+type SqliteStatement = Database.Statement;
+
+/** Minimal structural surface of the `better-sqlite3` module used at runtime. */
+type SqliteModule = new (filePath: string) => SqliteDatabase;
+
+/**
+ * Loads `better-sqlite3` lazily. The module is a native addon that is never
+ * bundled into the packaged extension, so it may be absent at runtime. Returns
+ * `null` when unavailable so metrics degrade to a no-op sink instead of
+ * breaking extension activation.
+ */
+function loadBetterSqlite3(): SqliteModule | null {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    return require('better-sqlite3') as SqliteModule;
+  } catch {
+    return null;
+  }
+}
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS runs (
@@ -77,16 +98,19 @@ function stepId(runId: string, stepIndex: number): string {
  * so a metrics failure can never disrupt an apply run.
  */
 export class SqliteMetricsSink implements MetricsSink {
-  private readonly db: Database.Database | null;
-  private readonly upsert: Database.Statement | null;
+  private readonly db: SqliteDatabase | null;
+  private readonly upsert: SqliteStatement | null;
   private readonly runStarts = new Map<string, RunStart>();
 
   constructor(dbPath: string) {
-    let db: Database.Database | null = null;
+    let db: SqliteDatabase | null = null;
     try {
-      fs.mkdirSync(path.dirname(dbPath), { recursive: true });
-      db = new Database(dbPath);
-      db.exec(SCHEMA);
+      const sqlite = loadBetterSqlite3();
+      if (sqlite) {
+        fs.mkdirSync(path.dirname(dbPath), { recursive: true });
+        db = new sqlite(dbPath);
+        db.exec(SCHEMA);
+      }
     } catch {
       // Unopenable DB degrades to a no-op sink; never disrupt activation.
       db?.close();

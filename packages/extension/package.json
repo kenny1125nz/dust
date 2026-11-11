@@ -36,8 +36,9 @@
   "scripts": {
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "build:webview": "esbuild src/webview/index.tsx --bundle --outdir=dist/webview --external:vscode",
-    "vscode:prepublish": "npm run compile && npm run build:webview",
+    "build:host": "esbuild src/extension.ts --bundle --platform=node --format=cjs --outfile=dist/extension.js --external:vscode --external:better-sqlite3",
+    "build:webview": "esbuild src/webview/index.tsx --bundle --outdir=dist/webview --external:vscode --external:os --external:path",
+    "vscode:prepublish": "npm run compile && npm run build:host && npm run build:webview",
     "test": "npm run compile && node --test \"dist/**/*.test.js\"",
     "package": "vsce package --no-dependencies --allow-missing-repository --skip-license"
   },

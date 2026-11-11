@@ -49,7 +49,7 @@ function writeRaw(socket: net.Socket, chunk: string): Promise<void> {
 test('forWorkspace derives the endpoint from the workspace path', () => {
   const source = PipeCompletionSource.forWorkspace('/tmp/My Project');
   assert.strictEqual(source.endpoint, completionPipeName('/tmp/My Project'));
-  assert.strictEqual(source.endpoint, '\\\\.\\pipe\\dust-My Project');
+  assert.ok(path.isAbsolute(source.endpoint) || source.endpoint.startsWith('\\\\.\\pipe\\'));
 });
 
 test('resolves the waiter for a matching correlation id', async () => {
@@ -226,7 +226,7 @@ test('dispose rejects still-pending waiters', async () => {
 async function cleanupSocket(pipeName: string): Promise<void> {
   await new Promise<void>((resolve) => setTimeout(resolve, 10));
   try {
-    fs.unlinkSync(path.join(process.cwd(), pipeName));
+    fs.unlinkSync(pipeName);
   } catch {
     // Already gone or never materialised as a filesystem node.
   }

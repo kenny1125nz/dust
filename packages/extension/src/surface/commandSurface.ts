@@ -81,7 +81,11 @@ export class DustCommandSurface {
         payload.actorId,
         (payload.targetPaths ?? []).map((path) => this.deps.toFileUri(path)),
         payload.wholeTarget ?? false,
-        { model: payload.model ?? undefined, addendum: payload.addendum ?? undefined }
+        {
+          model: payload.model ?? undefined,
+          gateway: payload.gateway ?? undefined,
+          addendum: payload.addendum ?? undefined,
+        }
       );
       this.post({ type: 'complete', result });
     } catch (error) {

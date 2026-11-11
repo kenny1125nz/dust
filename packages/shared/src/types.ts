@@ -6,6 +6,15 @@ export function isRole(value: unknown): value is Role {
   return typeof value === 'string' && (ROLES as readonly string[]).includes(value);
 }
 
+/** The chat tool a composed turn is dispatched to. */
+export type ChatGateway = 'copilot' | 'cline';
+
+export const CHAT_GATEWAYS: readonly ChatGateway[] = ['copilot', 'cline'];
+
+export function isChatGateway(value: unknown): value is ChatGateway {
+  return typeof value === 'string' && (CHAT_GATEWAYS as readonly string[]).includes(value);
+}
+
 export type CallbackStatus = 'done' | 'error' | 'needs-input';
 
 export const CALLBACK_STATUSES: readonly CallbackStatus[] = ['done', 'error', 'needs-input'];

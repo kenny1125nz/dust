@@ -13,14 +13,15 @@
   "scripts": {
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "prepublishOnly": "npm run compile",
+    "build:cli": "esbuild src/cli.ts --bundle --platform=node --format=cjs --outfile=dist/cli.js",
+    "prepack": "npm run build:cli",
+    "prepublishOnly": "npm run compile && npm run build:cli",
     "test": "npm run compile && node --test \"dist/**/*.test.js\""
   },
-  "dependencies": {
-    "@dust/shared": "^0.1.0"
-  },
   "devDependencies": {
+    "@dust/shared": "^0.1.0",
     "@types/node": "^20.0.0",
+    "esbuild": "^0.20.2",
     "typescript": "^5.4.0"
   }
 }

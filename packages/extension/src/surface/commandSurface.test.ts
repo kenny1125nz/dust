@@ -100,6 +100,7 @@ test('apply forwards the mapped request and posts complete', async () => {
     wholeTarget: false,
     workspacePath: '/workspace',
     model: 'Review',
+    gateway: 'cline',
     addendum: 'Also consider edge cases.',
   };
   panel.receive({ type: 'apply', payload });
@@ -108,7 +109,11 @@ test('apply forwards the mapped request and posts complete', async () => {
   assert.strictEqual(trigger.calls[0].actorId, 'plan');
   assert.strictEqual(trigger.calls[0].targetUris[0].path, '/workspace/round-2/Goal.md');
   assert.strictEqual(trigger.calls[0].wholeTarget, false);
-  assert.deepStrictEqual(trigger.calls[0].opts, { model: 'Review', addendum: 'Also consider edge cases.' });
+  assert.deepStrictEqual(trigger.calls[0].opts, {
+    model: 'Review',
+    gateway: 'cline',
+    addendum: 'Also consider edge cases.',
+  });
   assert.deepStrictEqual(panel.messages.find((m) => m.type === 'complete'), {
     type: 'complete',
     result: { itemCount: 2, stepCount: 4 },
@@ -123,7 +128,7 @@ test('apply without model or addendum passes undefined options', async () => {
     payload: { actorId: 'plan', targetPaths: ['/workspace/Goal.md'], wholeTarget: true, workspacePath: '/workspace' },
   });
   await flush();
-  assert.deepStrictEqual(trigger.calls[0].opts, { model: undefined, addendum: undefined });
+  assert.deepStrictEqual(trigger.calls[0].opts, { model: undefined, gateway: undefined, addendum: undefined });
 });
 
 test('apply failure posts an error message', async () => {

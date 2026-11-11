@@ -1,6 +1,14 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { ActorSourceAdapter, PipeCompletionSource, SqliteMetricsSink, VscodeChatAgent, VscodeFileSystem } from './adapters';
+import {
+  ActorSourceAdapter,
+  ClineChatAgent,
+  PipeCompletionSource,
+  SqliteMetricsSink,
+  VscodeChatAgent,
+  VscodeFileSystem,
+} from './adapters';
+import { createGatewayRegistry } from './dispatch';
 import { createApplyEngine } from './engine';
 import { createTargetResolver } from './targets';
 import { openDustSurface } from './surface/webviewPanel';
@@ -21,13 +29,16 @@ export function activate(context: vscode.ExtensionContext): void {
   const catalogue = new ActorSourceAdapter(path.join(workspacePath, ACTORS_RELATIVE));
   const fs = new VscodeFileSystem();
   const targets = createTargetResolver(fs);
-  const gateway = new VscodeChatAgent();
+  const gateways = createGatewayRegistry({
+    copilot: new VscodeChatAgent(),
+    cline: new ClineChatAgent(),
+  });
   const completion = PipeCompletionSource.forWorkspace(workspacePath);
   const metrics = new SqliteMetricsSink(path.join(workspacePath, METRICS_RELATIVE));
   const engine = createApplyEngine({
     catalogue,
     targets,
-    gateway,
+    gateways,
     completion,
     fs,
     metrics,

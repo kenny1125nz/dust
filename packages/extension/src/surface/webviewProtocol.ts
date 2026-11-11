@@ -1,4 +1,4 @@
-import type { Role } from '@dust/shared';
+import type { ChatGateway, Role } from '@dust/shared';
 import type { ActorTreeNode } from '../actors/schema';
 
 /**
@@ -10,6 +10,7 @@ import type { ActorTreeNode } from '../actors/schema';
 /** The actor content the panel needs to render its preview. */
 export interface ActorPreview {
   model?: Role;
+  gateway?: ChatGateway;
   steps: string[];
   body: string;
 }
@@ -36,6 +37,8 @@ export interface WebviewApplyRequest {
   wholeTarget: boolean;
   workspacePath: string;
   model?: Role | null;
+  /** The chat tool to dispatch to; overrides the actor/step default. */
+  gateway?: ChatGateway | null;
   addendum?: string;
 }
 

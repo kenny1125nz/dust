@@ -4,7 +4,7 @@ import type { Uri } from 'vscode';
 import type { CompletionFrame } from '@dust/shared';
 import { ActorEntry, InMemoryActorSource } from '../actors';
 import { CompletionSource } from '../completion';
-import { EchoAgentGateway } from '../dispatch';
+import { EchoAgentGateway, GatewayRegistry } from '../dispatch';
 import { InMemoryMetricsSink } from '../metrics';
 import { InMemoryFileSystem, createTargetResolver } from '../targets';
 import { ApplyEngine, ApplyRequest, RunResult, createApplyEngine } from './index';
@@ -60,7 +60,7 @@ function buildEngine(actors: Record<string, ActorEntry>): EngineParts {
   const engine = createApplyEngine({
     catalogue: new InMemoryActorSource({ name: 'actors', children: [] }, actors),
     targets: createTargetResolver(fs),
-    gateway,
+    gateways: new GatewayRegistry({}, gateway),
     completion,
     fs,
     metrics,
@@ -396,4 +396,95 @@ test('a run with no work items records start and end with zero counts', async ()
   assert.strictEqual(parts.metrics.runStarts[0].itemCount, 0);
   assert.deepStrictEqual(parts.metrics.runEnds, [parts.metrics.runStarts[0].runId]);
   assert.strictEqual(parts.gateway.dispatched.length, 0);
+});
+
+interface DualGatewayParts {
+  engine: ApplyEngine;
+  copilot: EchoAgentGateway;
+  cline: EchoAgentGateway;
+  completion: ManualCompletionSource;
+  fs: InMemoryFileSystem;
+}
+
+/** Wires two echo gateways (copilot + cline) and drives a run to completion. */
+async function runDual(
+  actors: Record<string, ActorEntry>,
+  stepContents: Record<string, string>,
+  req: ApplyRequest
+): Promise<DualGatewayParts> {
+  const fs = new InMemoryFileSystem();
+  const copilot = new EchoAgentGateway();
+  const cline = new EchoAgentGateway();
+  const completion = new ManualCompletionSource();
+  const metrics = new InMemoryMetricsSink();
+  const engine = createApplyEngine({
+    catalogue: new InMemoryActorSource({ name: 'actors', children: [] }, actors),
+    targets: createTargetResolver(fs),
+    gateways: new GatewayRegistry({ copilot, cline }, copilot),
+    completion,
+    fs,
+    metrics,
+    version: '0.1.0-test',
+    toFileUri: makeUri,
+  });
+  writeFile(fs, '/workspace/Goal.md', '# Goal');
+  for (const [p, c] of Object.entries(stepContents)) {
+    writeFile(fs, p, c);
+  }
+  const parts: DualGatewayParts = { engine, copilot, cline, completion, fs };
+  const run = parts.engine.apply(req);
+  let copilotCursor = 0;
+  let clineCursor = 0;
+  for (;;) {
+    await settle();
+    let progressed = false;
+    while (copilot.dispatched.length > copilotCursor) {
+      progressed = true;
+      completion.resolve(extractCid(copilot.dispatched[copilotCursor++].instruction));
+    }
+    while (cline.dispatched.length > clineCursor) {
+      progressed = true;
+      completion.resolve(extractCid(cline.dispatched[clineCursor++].instruction));
+    }
+    if (!progressed) {
+      break;
+    }
+  }
+  await run;
+  return parts;
+}
+
+test('gateway precedence: request overrides step overrides actor, default is copilot', async () => {
+  const requestG = (overrides: Partial<ApplyRequest> = {}) => request({ actorId: 'g', ...overrides });
+  const actorCline = await runDual(
+    { g: { gateway: 'cline', steps: ['/actors/g.md'] } },
+    { '/actors/g.md': '---\ngateway: cline\n---\nbody' },
+    requestG()
+  );
+  assert.strictEqual(actorCline.copilot.dispatched.length, 0);
+  assert.strictEqual(actorCline.cline.dispatched.length, 1, 'actor gateway wins');
+
+  const stepCline = await runDual(
+    { g: { steps: ['/actors/g.md'] } },
+    { '/actors/g.md': '---\ngateway: cline\n---\nbody' },
+    requestG()
+  );
+  assert.strictEqual(stepCline.copilot.dispatched.length, 0);
+  assert.strictEqual(stepCline.cline.dispatched.length, 1, 'step gateway wins over absent actor');
+
+  const requestCline = await runDual(
+    { g: { gateway: 'copilot', steps: ['/actors/g.md'] } },
+    { '/actors/g.md': '---\ngateway: cline\n---\nbody' },
+    requestG({ gateway: 'cline' })
+  );
+  assert.strictEqual(requestCline.copilot.dispatched.length, 0);
+  assert.strictEqual(requestCline.cline.dispatched.length, 1, 'request gateway wins');
+
+  const noGateway = await runDual(
+    { g: { steps: ['/actors/g.md'] } },
+    { '/actors/g.md': 'body' },
+    requestG()
+  );
+  assert.strictEqual(noGateway.copilot.dispatched.length, 1, 'defaults to copilot');
+  assert.strictEqual(noGateway.cline.dispatched.length, 0);
 });

@@ -161,7 +161,7 @@ test('delivers a completion frame over the workspace pipe', async () => {
   });
 
   try {
-    const { code } = await runCli([
+    const { code, stdout } = await runCli([
       '--status',
       'done',
       '--id',
@@ -172,12 +172,16 @@ test('delivers a completion frame over the workspace pipe', async () => {
       workspace,
     ]);
     assert.strictEqual(code, 0);
+    assert.match(stdout, /delivered completion for cid-123 \(done\)/);
+    assert.ok(!fs.existsSync(summary), 'summary file is removed after successful delivery');
   } finally {
     await new Promise<void>((resolve) => server.close(() => resolve()));
     try {
-      fs.unlinkSync(path.join(process.cwd(), pipeName));
+      fs.unlinkSync(pipeName);
     } catch {}
-    fs.unlinkSync(summary);
+    if (fs.existsSync(summary)) {
+      fs.unlinkSync(summary);
+    }
   }
 
   const frame = JSON.parse(received.join('').trim());
@@ -186,4 +190,26 @@ test('delivers a completion frame over the workspace pipe', async () => {
     correlationId: 'cid-123',
     summary: { confidence: 85, actions: ['read', 'write'], notes: 'ok' },
   });
+});
+
+test('keeps the summary file and prints no success message when delivery fails', async () => {
+  const summary = tempSummaryFile(JSON.stringify({ confidence: 50, actions: [] }));
+  const workspace = `no-deliver-${process.pid}-${Date.now()}`;
+  try {
+    const { code, stdout } = await runCli([
+      '--status',
+      'done',
+      '--id',
+      'cid',
+      '--summary_file',
+      summary,
+      '--workspace',
+      workspace,
+    ]);
+    assert.strictEqual(code, 2);
+    assert.ok(fs.existsSync(summary), 'summary file is preserved on failure');
+    assert.strictEqual(stdout, '');
+  } finally {
+    fs.unlinkSync(summary);
+  }
 });

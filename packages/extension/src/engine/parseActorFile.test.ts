@@ -24,7 +24,6 @@ test('ignores unknown front-matter keys and keeps model', () => {
 test('returns no model when model is absent', () => {
   assert.deepStrictEqual(parseActorFile('---\ntitle: Whatever\n---\nbody\n'), {
     body: 'body',
-    model: undefined,
   });
 });
 
@@ -32,6 +31,28 @@ test('fails fast on an invalid model value', () => {
   assert.throws(
     () => parseActorFile('---\nmodel: Quantum\n---\nbody\n'),
     /must be one of: Reason, Build, Review, Write, Repair/
+  );
+});
+
+test('parses gateway front-matter alongside model', () => {
+  assert.deepStrictEqual(parseActorFile('---\nmodel: Reason\ngateway: cline\n---\nbody\n'), {
+    body: 'body',
+    model: 'Reason',
+    gateway: 'cline',
+  });
+});
+
+test('returns no gateway when gateway is absent', () => {
+  assert.deepStrictEqual(parseActorFile('---\nmodel: Reason\n---\nbody\n'), {
+    body: 'body',
+    model: 'Reason',
+  });
+});
+
+test('fails fast on an invalid gateway value', () => {
+  assert.throws(
+    () => parseActorFile('---\ngateway: llama\n---\nbody\n'),
+    /must be one of: copilot, cline/
   );
 });
 
